@@ -1,8 +1,7 @@
 streamlit==1.32.2
-suno-api==0.1.0
+suno-api
 openai==1.14.3
 anthropic==0.21.3
 moviepy==1.0.3
 imageio==2.31.6
 mutagen==1.47.0
-curl-cffi==0.6.1
