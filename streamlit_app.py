@@ -78,7 +78,7 @@ def generate_lyric_video(song_prompt, style_prompt):
     print(song_url)
 
 
-    r = requests.get(song_url,"impersonate", "chrome")
+    r = requests.get(song_url)
     with open("downloaded_speech.mp3", "wb") as audio_file:
         audio_file.write(r.content)
 
@@ -126,7 +126,7 @@ def generate_lyric_video(song_prompt, style_prompt):
       n=1,
     )
     image_url = response.data[0].url   
-    response = requests.get(image_url,"impersonate", "chrome")
+    response = requests.get(image_url)
     with open("background.jpg", "wb") as img_file:
         img_file.write(response.content)
 
