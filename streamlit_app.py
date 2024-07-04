@@ -7,6 +7,8 @@ import suno
 import anthropic
 import time 
 import subprocess
+import os
+
 
 suno_cookie = os.getenv('SUNO_COOKIE')
 anthropic_api_key = os.getenv('ANTHROPIC_API_KEY')
