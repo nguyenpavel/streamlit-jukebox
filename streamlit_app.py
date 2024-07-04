@@ -1,13 +1,26 @@
-import os
-import suno  # Assuming suno.Client inherits from Client
-import anthropic
-import openai
-import streamlit as st
+import suno
 import requests
+import random
+import time
+from typing import Optional
+
+class CustomSunoClient(suno.Client):
+    def __init__(self, cookie: str, impersonate: str = "chrome") -> None:
+        super().__init__(cookie)
+        self.impersonate = impersonate
+
+    def request(self, *args, **kwargs) -> requests.Response:
+        kwargs["impersonate"] = kwargs.get("impersonate", self.impersonate)
+        return self._session.request(*args, **kwargs)
+
+# Define the rest of your necessary imports and logic here...
+import os
+import streamlit as st
 from mutagen.mp3 import MP3
 from moviepy.editor import ImageClip
-import time
-import subprocess
+import openai
+import anthropic
+import requests
 
 # Access environment variables
 suno_cookie = os.getenv('SUNO_COOKIE')
@@ -15,7 +28,7 @@ anthropic_api_key = os.getenv('ANTHROPIC_API_KEY')
 openai_api_key = os.getenv('OPENAI_API_KEY')
 
 # Initialize clients with environment variables
-client = suno.Client(cookie=suno_cookie, impersonate="firefox")  # Example with "firefox"
+client = CustomSunoClient(cookie=suno_cookie, impersonate="firefox")  # Example with "firefox"
 client2 = anthropic.Anthropic(api_key=anthropic_api_key)
 client_open = openai.OpenAI(api_key=openai_api_key)
 
