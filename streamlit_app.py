@@ -15,7 +15,7 @@ anthropic_api_key = os.getenv('ANTHROPIC_API_KEY')
 openai_api_key = os.getenv('OPENAI_API_KEY')
 
 # Initialize clients with environment variables
-client = suno.Suno(cookie=suno_cookie, impersonate="firefox")  # Example of using 'firefox' instead of 'chrome'
+client = suno.Suno(cookie=suno_cookie)
 client2 = anthropic.Anthropic(api_key=anthropic_api_key)
 client_open = openai.OpenAI(api_key=openai_api_key)
 
