@@ -1,26 +1,34 @@
-import streamlit as st
-import requests
-from mutagen.mp3 import MP3
-from moviepy.editor import ImageClip
-from openai import OpenAI
+import os
 import suno
 import anthropic
-import time 
+import openai
+import requests
+from mutagen.mp3 import MP3
 import subprocess
-import os
+import streamlit as st
+import time
 
+# Custom Suno client wrapper to handle the impersonate parameter
+class CustomSunoClient(suno.Suno):
+    def __init__(self, cookie: str, impersonate: str = "chrome"):
+        super().__init__(cookie)
+        self.impersonate = impersonate
 
+    def request(self, *args, **kwargs):
+        kwargs["impersonate"] = self.impersonate
+        return super().request(*args, **kwargs)
+
+# Access environment variables
 suno_cookie = os.getenv('SUNO_COOKIE')
 anthropic_api_key = os.getenv('ANTHROPIC_API_KEY')
 openai_api_key = os.getenv('OPENAI_API_KEY')
 
 # Initialize clients with environment variables
-client = suno.Suno(cookie=suno_cookie)
+client = CustomSunoClient(cookie=suno_cookie, impersonate="chrome")
 client2 = anthropic.Anthropic(api_key=anthropic_api_key)
 client_open = openai.OpenAI(api_key=openai_api_key)
 
-
-#convert transcription data to SRT format
+# Convert transcription data to SRT format
 def convert_to_srt(transcription_data):
     srt_content = ""
     words_group = []  # To store groups of words
@@ -41,11 +49,9 @@ def convert_to_srt(transcription_data):
 
     return srt_content
 
-
-
-# to generate lyric song video
+# Generate lyric song video
 def generate_lyric_video(song_prompt, style_prompt):
-    #generate lyrics
+    # Generate lyrics
     message = client2.messages.create(
         model="claude-3-opus-20240229",
         max_tokens=2132,
@@ -56,18 +62,18 @@ def generate_lyric_video(song_prompt, style_prompt):
                 "content": [
                     {
                         "type": "text",
-                        "text": "Generate lyrics for this song: " + song_prompt+ ". Only give me the lyrics, nothing else. Start with Lyrics:"
+                        "text": "Generate lyrics for this song: " + song_prompt + ". Only give me the lyrics, nothing else. Start with Lyrics:"
                     }
                 ]
             }
         ]
     )
     lyrics = message.content[0].text
-    lyrics=  lyrics.split("Lyrics:", 1)[-1].strip()
+    lyrics = lyrics.split("Lyrics:", 1)[-1].strip()
 
     clips = client.songs.generate(
         lyrics,
-        custom = True,
+        custom=True,
         tags=style_prompt,
         instrumental=False,
     )
@@ -76,7 +82,6 @@ def generate_lyric_video(song_prompt, style_prompt):
     clip = client.songs.get(clip_id)
     song_url = clip['audio_url']
     print(song_url)
-
 
     r = requests.get(song_url)
     with open("downloaded_speech.mp3", "wb") as audio_file:
@@ -107,26 +112,26 @@ def generate_lyric_video(song_prompt, style_prompt):
 
     audio_duration = rounded_duration
 
-    #get image generation prompt and image
+    # Get image generation prompt and image
     response = client_open.chat.completions.create(
-      model="gpt-3.5-turbo",
-      messages=[
-        {"role": "user", "content": f"Give me a short album cover description of the song: {song_prompt}" +"no words in the album cover"},
-      ]
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "user", "content": f"Give me a short album cover description of the song: {song_prompt} no words in the album cover"},
+        ]
     )
     print(response.choices[0].message.content)
     image_design = response.choices[0].message.content
 
-    #using dalle3 api to generate image
+    # Using DALL-E 3 API to generate image
     response = client_open.images.generate(
-      model="dall-e-3",
-      prompt= image_design,
-      size="1024x1024",
-      quality="standard",
-      n=1,
+        model="dall-e-3",
+        prompt=image_design,
+        size="1024x1024",
+        quality="standard",
+        n=1,
     )
-    image_url = response.data[0].url   
-    response = requests.get(image_url, impersonate="chrome110")
+    image_url = response.data[0].url
+    response = requests.get(image_url)
     with open("background.jpg", "wb") as img_file:
         img_file.write(response.content)
 
@@ -139,7 +144,7 @@ def generate_lyric_video(song_prompt, style_prompt):
         srt_file.write(srt_content)
 
     scale_cmd = [
-        "ffmpeg", "-i", "background.jpg", "-vf",   #IMPORTANT! Either ensure that ffmpeg is added to your system path or you may need to point it to your ffmpeg's folder e.g. C:\\Users\\USER_NAME\\\\bin\\ffmpeg
+        "ffmpeg", "-i", "background.jpg", "-vf",   # Ensure ffmpeg is added to your system path
         "scale='if(gt(a,16/9),1080,-2)':'if(gt(a,16/9),-2,1034)'", "-y",
         "background_even.jpg"
     ]
@@ -147,7 +152,7 @@ def generate_lyric_video(song_prompt, style_prompt):
 
     # Create a video from the background image
     create_video_cmd = [
-         "ffmpeg", "-loop", "1", "-i", "background_even.jpg",
+        "ffmpeg", "-loop", "1", "-i", "background_even.jpg",
         "-i", "downloaded_speech.mp3", "-c:v", "libx264", "-tune",
         "stillimage", "-c:a", "aac", "-b:a", "192k", "-pix_fmt",
         "yuv420p", "-t", str(audio_duration), "-shortest", "temp_video.mp4"
@@ -163,8 +168,6 @@ def generate_lyric_video(song_prompt, style_prompt):
     subprocess.run(add_subtitles_cmd, check=True)
 
     return "final_video_with_subtitles.mp4"
-
-
 
 # Streamlit UI
 st.title('Lyric Video Generator')
