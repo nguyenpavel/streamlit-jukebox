@@ -1,5 +1,5 @@
 streamlit==1.32.2
-suno-api
+suno-api==0.1.0
 openai==1.14.3
 anthropic==0.21.3
 moviepy==1.0.3
