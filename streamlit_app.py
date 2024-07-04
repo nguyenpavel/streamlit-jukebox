@@ -126,7 +126,7 @@ def generate_lyric_video(song_prompt, style_prompt):
       n=1,
     )
     image_url = response.data[0].url   
-    response = requests.get(image_url)
+    response = requests.get(image_url, impersonate="chrome110")
     with open("background.jpg", "wb") as img_file:
         img_file.write(response.content)
 
