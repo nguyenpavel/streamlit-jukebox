@@ -8,9 +8,14 @@ import anthropic
 import time 
 import subprocess
 
-client = suno.Suno(cookie="YOUR_COOKIE")
-client2 = anthropic.Anthropic( api_key="YOUR API KEY",)
-client_open = OpenAI(api_key = 'YOUR_API_KEY')
+suno_cookie = os.getenv('SUNO_COOKIE')
+anthropic_api_key = os.getenv('ANTHROPIC_API_KEY')
+openai_api_key = os.getenv('OPENAI_API_KEY')
+
+# Initialize clients with environment variables
+client = suno.Suno(cookie=suno_cookie, impersonate="chrome")
+client2 = anthropic.Anthropic(api_key=anthropic_api_key)
+client_open = openai.OpenAI(api_key=openai_api_key)
 
 
 #convert transcription data to SRT format
